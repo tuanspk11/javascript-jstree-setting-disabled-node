@@ -1,0 +1,7 @@
+﻿.disabled_checkbox {
+    pointer-events: none;
+    opacity: 0.5;
+}
+    .disabled_checkbox:hover {
+        cursor: none;
+    }
