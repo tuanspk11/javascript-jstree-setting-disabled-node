@@ -18,7 +18,7 @@
                     });
                     $(node).removeClass('child_checked');
 
-                    if ($(node).children('ul').children('li').length == 0) {
+                    if ($(node).hasClass('jstree-leaf')) {
                         CheckedRecursive(node);
                         return true;
                     }
@@ -31,7 +31,7 @@
                         }
                     });
 
-                    if ($(node).children('ul').children('li').length == 0) {
+                    if ($(node).hasClass('jstree-leaf')) {
                         UncheckedRecursive(node);
                         return true;
                     }
@@ -73,7 +73,7 @@ function CheckedRecursive(node, is_check) {
     if (parent_node.length > 0) {
         var count = 0;
         parent_node.find('li[disabled!=disabled]').each(function () {
-            if ($(this).children('ul').children('li').length == 0) {
+            if ($(this).hasClass('jstree-leaf')) {
                 count += $(this).hasClass('jstree-unchecked') ? 1 : 0;
             }
         });
