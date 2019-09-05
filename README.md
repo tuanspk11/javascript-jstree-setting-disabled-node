@@ -1,98 +1,144 @@
 # javascript-jstree-setting-disabled-node
-
-    // customize default check or uncheck node
-    $('#tree').jstree({
-        types: {
-            "types": {
-                "default": {
-                    "check_node": function (node) {
-                        if ($(node).hasClass('jstree-undetermined') && $(node).hasClass('custom_undetermined')) {
-                            if (!$(node).hasClass('child_checked') && $(node).hasClass('custom_unchecked')) {
-                                this.uncheck_node(node);
-                                return false;
-                            }
-                        }
+    /*Add customize*/
+    when node just has a leaf
+        Parent(OFF), Children(OFF) => P(OFF -> ON),  C(OFF)
+                                   => C(OFF -> ON),  P(ON)
+                                 
+        Parent(ON),  Children(ON)  => P(ON  -> OFF), C(OFF)
+                                   => C(ON  -> OFF), P(ON)
+        
+        Parent(ON),  Children(OFF) => P(ON  -> OFF), C(OFF)
+                                   => C(OFF -> ON),  P(ON)
     
-                        $(node).children('ul').children('li').each(function () {
-                            if (!$(this).hasClass('jstree-checked') && !$(this).hasClass('disabled_checkbox')) {
-                                $(this).addClass('child_checked');
-                                $('#tree').jstree("check_node", this);
-                            }
-                        });
-                        $(node).removeClass('child_checked');
+    // TreeView
+    function SetDataTreeView(tree_data) {
+        $('#jstree').jstree({
+            json_data: {
+                "data": tree_data
+            },
+            types: {
+                "types": {
+                    "default": {
+                        "check_node": function (node) {
+                            $(node).hasClass('custom_checked') ? UncheckNode(node) : CheckNode(node);
     
-                        if ($(node).children('ul').children('li').length == 0) {
-                            CheckedRecursive(node);
-                            return true;
-                        }
-                        return false;
-                    },
-                    "uncheck_node": function (node) {
-                        $(node).children('ul').children('li').each(function () {
-                            if (!$(this).hasClass('jstree-unchecked') && !$(this).hasClass('disabled_checkbox')) {
-                                $('#tree').jstree("uncheck_node", this);
-                            }
-                        });
+                            ParentNodeSetting($(node).parent()[0].parentNode);
     
-                        if ($(node).children('ul').children('li').length == 0) {
-                            UncheckedRecursive(node);
-                            return true;
+                            return false;
+                        },
+                        "uncheck_node": function (node) {
+                            UncheckNode(node);
+    
+                            var parent_node = $(node).parent()[0].parentNode;
+                            ParentNodeSetting($(parent_node).hasClass('parent_node_custom') ?
+                                              $(parent_node).parent()[0].parentNode : parent_node);
+    
+                            return false;
                         }
-                        return false;
                     }
                 }
-            }
-        },
-        checkbox: {
-            real_checkboxes: true,
-            checked_parent_open: true
-        },
-        plugins: ["themes", "ui", "checkbox", "types"]
-    }).bind("load_node.jstree", function () {
-        $(this).find('li[disabled=disabled]').addClass('disabled_checkbox');
-    }).bind("loaded.jstree", function () {
-        $('#tree').find('li[disabled=disabled]').each(function () {
-            UndeterminedNodeSetting(this);
-        });
-    });
-    
-    // parent nodes have some disabled child nodes (uncheck)
-    function UndeterminedNodeSetting(node) {
-        var parent_node = $('#tree').find('li[id=' + $(node).parent()[0].parentNode.id + ']');
-        parent_node.addClass('custom_undetermined');
-        if (parent_node.length > 0) {
-            UndeterminedNodeSetting(parent_node);
-        }
-    }
-    
-    // check node
-    function CheckedRecursive(node, is_check) {
-        if ($(node).hasClass('custom_undetermined')) {
-            $(node).removeClass(is_check == undefined ? 'custom_unchecked' : 'custom_checked');
-            $(node).addClass(is_check == undefined ? 'custom_checked' : 'custom_unchecked');
-        }
-    
-        var parent_node = $('#tree').find('li[id=' + $(node).parent()[0].parentNode.id + ']');
-        if (parent_node.length > 0) {
-            var count = 0;
-            parent_node.find('li[disabled!=disabled]').each(function () {
-                if ($(this).children('ul').children('li').length == 0) {
-                    count += $(this).hasClass('jstree-unchecked') ? 1 : 0;
+            },
+            checkbox: {
+                two_state: true,
+                real_checkboxes: true,
+                checked_parent_open: true
+            },
+            plugins: ["themes", "json_data", "ui", "checkbox", "types"]
+        }).bind("load_node.jstree", function () {
+            $(this).find('li[disabled=disabled]').children('a').addClass('disabled_checkbox');
+            $(this).find('li[selected=selected]').addClass('selected');
+            $(this).find('li[parent_custom=true]').addClass('parent_node_custom');
+        }).bind("loaded.jstree", function () {
+            $('#jstree').jstree("open_all");
+            $('#jstree').find('li[disabled=disabled]').each(function () {
+                var parent_node = $('#jstree').find('li[id=' + $(this).parent()[0].parentNode.id + ']');
+                if (parent_node.length > 0) {
+                    var bSelected = $(this).hasClass('selected');
+                    if ((bSelected && !$(parent_node).hasClass('has_checked_dis_node'))
+                        || (!bSelected && !$(parent_node).hasClass('has_unchecked_dis_node'))) {
+                        SetNodeHasDisabled(parent_node, bSelected);
+                    }
                 }
+                $(this).removeClass('selected');
             });
-            count <= 1 ? CheckedRecursive(parent_node, true) : CheckedRecursive(parent_node);
+            $('#jstree').find('li[selected=selected]').each(function () {
+                $('#jstree').jstree("check_node", this);
+            });
+        });
+    }
+    
+    // setting parent of disabled node
+    function SetNodeHasDisabled(node, state) {
+        $(node).addClass(state ? 'has_checked_dis_node' : 'has_unchecked_dis_node');
+    
+        var parent_node = $('#jstree').find('li[id=' + $(node).parent()[0].parentNode.id + ']');
+        if (parent_node.length > 0) {
+            SetNodeHasDisabled(parent_node, state);
         }
     }
     
-    // uncheck node
-    function UncheckedRecursive(node) {
-        if ($(node).hasClass('custom_undetermined')) {
-            $(node).removeClass('custom_unchecked');
-            $(node).addClass('custom_checked');
-        }
+    // check or uncheck node and child of clicked node
+    function CheckNode(node) {
+        SetNode(node, true);
     
-        var parent_node = $('#tree').find('li[id=' + $(node).parent()[0].parentNode.id + ']');
+        if (!$(node).hasClass('parent_node_custom') || $(node).hasClass('child_checked')) {
+            $(node).children('ul').children('li[disabled!=disabled]').each(function () {
+                $(this).addClass('child_checked');
+                CheckNode(this);
+            });
+        }
+        $(node).removeClass('child_checked');
+    }
+    function UncheckNode(node) {
+        SetNode(node, false);
+    
+        $(node).children('ul').children('li[disabled!=disabled]').each(function () {
+            UncheckNode(this);
+        });
+    }
+    function SetNode(node, state) {
+        if (state) {
+            if ($(node).hasClass('has_unchecked_dis_node')) {
+                $(node).removeClass('custom_unchecked').addClass('custom_checked');
+                $(node).removeClass('jstree-unchecked').removeClass('jstree-checked').addClass('jstree-undetermined');
+            } else {
+                $(node).removeClass('custom_unchecked').removeClass('custom_checked');
+                $(node).removeClass('jstree-unchecked').removeClass('jstree-undetermined').addClass('jstree-checked');
+            }
+        } else {
+            if ($(node).hasClass('has_checked_dis_node')) {
+                $(node).removeClass('jstree-unchecked').removeClass('jstree-checked').addClass('jstree-undetermined');
+            } else {
+                $(node).removeClass('jstree-undetermined').removeClass('jstree-checked').addClass('jstree-unchecked');
+            }
+            $(node).removeClass('custom_unchecked').removeClass('custom_checked');
+        }
+    }
+    
+    // setting parent node after node was checked or unchecked
+    function ParentNodeSetting(node) {
+        SetParentNode(node, $(node).find('li.jstree-unchecked[disabled!=disabled]').length == 0);
+    
+        var parent_node = $('#jstree').find('li[id=' + $(node).parent()[0].parentNode.id + ']');
         if (parent_node.length > 0) {
-            UncheckedRecursive(parent_node);
+            ParentNodeSetting(parent_node);
+        }
+    }
+    function SetParentNode(node, state) {
+        if (state) {
+            if ($(node).find('li.jstree-unchecked').length > 0) {
+                $(node).removeClass('custom_unchecked').addClass('custom_checked');
+                $(node).removeClass('jstree-unchecked').removeClass('jstree-checked').addClass('jstree-undetermined');
+            } else {
+                $(node).removeClass('custom_unchecked').removeClass('custom_checked');
+                $(node).removeClass('jstree-unchecked').removeClass('jstree-undetermined').addClass('jstree-checked');
+            }
+        } else {
+            if ($(node).find('li.jstree-checked').length > 0) {
+                $(node).removeClass('jstree-unchecked').removeClass('jstree-checked').addClass('jstree-undetermined');
+            } else {
+                $(node).removeClass('jstree-undetermined').removeClass('jstree-checked').addClass('jstree-unchecked');
+            }
+            $(node).removeClass('custom_unchecked').removeClass('custom_checked');
         }
     }

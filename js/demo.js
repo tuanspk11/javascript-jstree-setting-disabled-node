@@ -167,23 +167,20 @@ function SetDataTreeView(tree_data) {
     }).bind("loaded.jstree", function () {
         $('#jstree').jstree("open_all");
         $('#jstree').find('li[disabled=disabled]').each(function () {
-            DisabledNodeSetting(this);
+            var parent_node = $('#jstree').find('li[id=' + $(this).parent()[0].parentNode.id + ']');
+            if (parent_node.length > 0) {
+                var bSelected = $(this).hasClass('selected');
+                if ((bSelected && !$(parent_node).hasClass('has_checked_dis_node'))
+                    || (!bSelected && !$(parent_node).hasClass('has_unchecked_dis_node'))) {
+                    SetNodeHasDisabled(parent_node, bSelected);
+                }
+            }
+            $(this).removeClass('selected');
         });
         $('#jstree').find('li[selected=selected]').each(function () {
             $('#jstree').jstree("check_node", this);
         });
     });
-}
-
-function DisabledNodeSetting(node) {
-    var parent_node = $('#jstree').find('li[id=' + $(node).parent()[0].parentNode.id + ']');
-    if (parent_node.length > 0) {
-        var bSelected = $(node).hasClass('selected');
-        if ((bSelected && !$(parent_node).hasClass('has_checked_dis_node')) || (!bSelected && !$(parent_node).hasClass('has_unchecked_dis_node'))) {
-                SetNodeHasDisabled(parent_node, bSelected);
-        }
-    }
-    $(node).removeClass('selected');
 }
 
 function SetNodeHasDisabled(node, state) {
