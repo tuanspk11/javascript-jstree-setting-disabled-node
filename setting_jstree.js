@@ -10,8 +10,8 @@
                         }
                     }
 
-                    $(node).children('ul').children('li').each(function () {
-                        if (!$(this).hasClass('jstree-checked') && !$(this).hasClass('disabled_checkbox')) {
+                    $(node).children('ul').children('li[disabled!=disabled]').each(function () {
+                        if (!$(this).hasClass('jstree-checked')) {
                             $(this).addClass('child_checked');
                             $('#tree').jstree("check_node", this);
                         }
@@ -25,8 +25,8 @@
                     return false;
                 },
                 "uncheck_node": function (node) {
-                    $(node).children('ul').children('li').each(function () {
-                        if (!$(this).hasClass('jstree-unchecked') && !$(this).hasClass('disabled_checkbox')) {
+                    $(node).children('ul').children('li[disabled!=disabled]').each(function () {
+                        if (!$(this).hasClass('jstree-unchecked')) {
                             $('#tree').jstree("uncheck_node", this);
                         }
                     });
