@@ -77,7 +77,7 @@
         }
     }
     
-    // check or uncheck node and child of clicked node
+    // check or uncheck node and children of clicked node
     function CheckNode(node) {
         SetNode(node, true);
     
